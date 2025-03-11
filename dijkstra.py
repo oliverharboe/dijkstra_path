@@ -7,3 +7,4 @@ class Path:
         self.end = end
 
     def dijkstra(self):
+        pass
