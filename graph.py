@@ -2,7 +2,7 @@ from random import randint
 from node import Node
 import networkx as nx
 import matplotlib.pyplot as plt
-from heapq import heappush,heappop,heapify
+from heapq import heappush,heappop
 
 
 class Graph:
@@ -12,7 +12,10 @@ class Graph:
     def add_node(self,id,node):
         self.nodes[id]=node
         
-    def gen_graph(self):
+    def gen_directed_graph(self):
+        """
+        generates random directed graph
+        """
         #add nodes
         node_amount = randint(6,10)
         for idx in range(node_amount):
@@ -27,8 +30,13 @@ class Graph:
                 if random_node != current_node.id:
                     random_weight = randint(5,10) # create random weight
                     current_node.add_edge(random_weight,random_node)
-
-    def show_graph(self):
+    
+    def gen_undirected_graph(self):
+        """
+        generates random undirected graph
+        """
+        pass
+    def show_graph(self,dist=None,path=[]):
         G = nx.DiGraph()
         G.add_nodes_from(range(len(self.nodes)))
         for node in self.nodes.values():
@@ -39,7 +47,10 @@ class Graph:
         nx.draw(G, pos, with_labels=True, node_color='lightblue', font_size=12, font_weight='bold')
         labels = nx.get_edge_attributes(G, 'weight')  # Hent vægte på kanterne
         nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)  # Vis vægtene på kanterne
-        plt.title("Graf med korteste sti", fontsize=10)
+        if path:
+            edges_in_path = list(zip(path, path[1:]))  # Opret kanter fra stien
+            nx.draw_networkx_edges(G, pos, edgelist=edges_in_path, edge_color='r', width=2)
+        plt.title(f"Graf med korteste sti : {dist}", fontsize=10)
         plt.show()
 
 
@@ -65,18 +76,11 @@ class Graph:
         return "Not Possible"
             
 
-        
-
-
-
-
-
 g1 = Graph()
-g1.gen_graph()
+g1.gen_directed_graph()
 
-for node in g1.nodes.values():
-    print(f"id: {node.id} next : {[x for x in node.next]}")
 g1.show_graph()
-print(g1.dijkstra(0,3))
+dist,path = g1.dijkstra(0,3)
+g1.show_graph(dist,path)
 
 
