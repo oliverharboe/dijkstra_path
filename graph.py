@@ -75,12 +75,3 @@ class Graph:
                     heappush(heapque,(distance+nextweight,nextid,pathlst + [nextid]))
         return "Not Possible"
             
-
-g1 = Graph()
-g1.gen_directed_graph()
-
-g1.show_graph()
-dist,path = g1.dijkstra(0,3)
-g1.show_graph(dist,path)
-
-
