@@ -53,7 +53,51 @@ class Graph:
 
 
     def show_di_graph(self,dist=None,path=[]):
-        G = nx.DiGraph()
+        nxgraph = nx.MultiDiGraph(directed=True)
+        plt.figure(figsize=(21, 10))  # Størrelse på grafens plot
+        for node in self.nodes.values():
+            for verweight, nextnode in node.next:
+                nxgraph.add_edge(node.id,nextnode,weight=verweight)
+        pos = nx.circular_layout(nxgraph)
+        nx.draw_networkx_nodes(nxgraph,pos,node_color="lightblue",label=True)
+        nx.draw_networkx_labels(nxgraph, pos, font_size=12, font_weight="bold", font_color="black")
+        # Bøjningsværdier til flere kanter
+        rad_count = {}
+
+        # Gennemgå og tegn hver kant med label
+        for u, v, key, data in nxgraph.edges(keys=True, data=True):
+            edge = tuple(sorted((u, v))) # key in dic
+            count = rad_count.get(edge, 0)
+            if count%2 == 0: rad = 0.15*count
+            else: rad = -0.15*count
+            rad_count[edge] = count + 1
+
+            if (u,v,data['weight']) in path:
+                farve = 'red'
+            else:
+                farve = 'gray'
+            nx.draw_networkx_edges(nxgraph, pos, edgelist=[(u, v)],edge_color=farve, width=2,connectionstyle=f"arc3,rad={rad}")
+
+            # Beregn label-position manuelt
+            x1, y1 = pos[u]
+            x2, y2 = pos[v]
+            label_x = (x1 + x2) / 2 + rad * 0.5 * (y2 - y1)
+            label_y = (y1 + y2) / 2 + rad * 0.5 * (x1 - x2)
+
+            # Skriv vægten med plt.text
+            weight = data.get("weight", "")
+            plt.text(label_x, label_y, str(weight), fontsize=12, color="blue", ha="center", va="center")
+        
+
+        if dist: # create title
+            plt.title(f"Graf med korteste sti : {dist}", fontsize=10)
+        else:
+            plt.title("plot over graf", fontsize=10)
+        plt.show()
+    
+
+    def show_undi_graph(self,dist=None,path=[]):
+        G = nx.Graph()
         G.add_nodes_from(range(len(self.nodes)))
         for node in self.nodes.values():
             for verweight, nextnode in node.next:
@@ -61,7 +105,7 @@ class Graph:
         pos = nx.circular_layout(G)  # Layout for grafen
         plt.figure(figsize=(10, 8))  # Størrelse på grafens plot
         nx.draw(G, pos, with_labels=True, node_color="lightblue", font_size=12, font_weight="bold")
-        nx.draw_networkx_edges(G, pos, connectionstyle="arc3,rad=0.3")
+        nx.draw_networkx_edges(G, pos)
         edge_labels = nx.get_edge_attributes(G, "weight")
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=12, font_color="red")
 
@@ -76,7 +120,7 @@ class Graph:
         '''
         dijkstra algo
         '''
-        heapque = [(0,start,[start])]
+        heapque = [(0,start,[])]
         visited_nodes = {start:1} # start id
 
         while len(heapque) != 0:
@@ -90,6 +134,16 @@ class Graph:
                     continue
                 else:
                     visited_nodes[nextid] = 1
-                    heappush(heapque,(distance+nextweight,nextid,pathlst + [nextid]))
-        return "Not Possible"
+                    heappush(heapque,(distance+nextweight,nextid,pathlst + [(current_id,nextid,nextweight)]))
+        return None, None
+
+if __name__ == '__main__':
+    g1 = Graph()
+    g1.gen_directed_graph()
+
+    g1.show_di_graph()
+    dist,path = g1.dijkstra(0,3)
+    g1.show_di_graph(dist,path)
+
+
             
