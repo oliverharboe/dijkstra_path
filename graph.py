@@ -17,40 +17,41 @@ class Graph:
         generates random directed graph
         """
         #add nodes
-        node_amount = randint(3,5)
+        node_amount = randint(5,6)
         for idx in range(node_amount):
             newnode = Node(idx)
             self.add_node(idx,newnode)
         # add egdes
         for idx in range(node_amount):
             current_node = self.nodes[idx]
-            egde_amount = randint(3,4)
+            egde_amount = randint(2,4)
             for _ in range(egde_amount):
                 random_node = randint(0,node_amount-1) # select random node
                 if random_node != current_node.id:
-                    random_weight = randint(5,10) # create random weight
+                    random_weight = randint(3,10) # create random weight
                     current_node.add_edge(random_weight,random_node)
+                    print(current_node.id,random_node)
     
     def gen_undirected_graph(self):
         """
         generates random undirected graph
         """
         #add nodes
-        node_amount = randint(3,5)
+        node_amount = randint(5,6)
         for idx in range(node_amount):
             newnode = Node(idx)
             self.add_node(idx,newnode)
         # add egdes
         for idx in range(node_amount):
             current_node = self.nodes[idx]
-            egde_amount = randint(3,4)
+            egde_amount = randint(2,3)
             for _ in range(egde_amount):
                 random_node = randint(0,node_amount-1) # select random node
                 if random_node != current_node.id:
-                    random_weight = randint(5,10) # create random weight
+                    random_weight = randint(3,10) # create random weight
                     current_node.add_edge(random_weight,random_node)
                     self.nodes[random_node].add_edge(random_weight,current_node.id)
-                    print(current_node.id,random_node)
+                    print(current_node.id,random_node,random_weight)
 
 
     def show_directed_graph(self,dist=None,path=[]):
@@ -59,7 +60,7 @@ class Graph:
         for node in self.nodes.values():
             for verweight, nextnode in node.next:
                 nxgraph.add_edge(node.id,nextnode,weight=verweight)
-        pos = nx.circular_layout(nxgraph)
+        pos = nx.spring_layout(nxgraph,seed=12)
         nx.draw_networkx_nodes(nxgraph,pos,node_color="lightblue",label=True)
         nx.draw_networkx_labels(nxgraph, pos, font_size=12, font_weight="bold", font_color="black")
         # Bøjningsværdier til flere kanter
@@ -108,7 +109,7 @@ class Graph:
         # Tilføj kanter — nogle har duplikater (modsatrettede) med samme vægt
         # Her definerer du path som en liste af (u, v, vægt)
 
-        pos = nx.circular_layout(nxgraph)
+        pos = nx.spring_layout(nxgraph,seed=12)
         plt.figure(figsize=(8,6))
         nx.draw_networkx_nodes(nxgraph, pos, node_color="lightblue", node_size=700)
         nx.draw_networkx_labels(nxgraph, pos, font_weight="bold")
