@@ -17,14 +17,14 @@ class Graph:
         generates random directed graph
         """
         #add nodes
-        node_amount = randint(7,10)
+        node_amount = randint(3,5)
         for idx in range(node_amount):
             newnode = Node(idx)
             self.add_node(idx,newnode)
         # add egdes
         for idx in range(node_amount):
             current_node = self.nodes[idx]
-            egde_amount = randint(2,3)
+            egde_amount = randint(3,4)
             for _ in range(egde_amount):
                 random_node = randint(0,node_amount-1) # select random node
                 if random_node != current_node.id:
@@ -36,23 +36,24 @@ class Graph:
         generates random undirected graph
         """
         #add nodes
-        node_amount = randint(7,10)
+        node_amount = randint(3,5)
         for idx in range(node_amount):
             newnode = Node(idx)
             self.add_node(idx,newnode)
         # add egdes
         for idx in range(node_amount):
             current_node = self.nodes[idx]
-            egde_amount = randint(2,3)
+            egde_amount = randint(3,4)
             for _ in range(egde_amount):
                 random_node = randint(0,node_amount-1) # select random node
                 if random_node != current_node.id:
                     random_weight = randint(5,10) # create random weight
                     current_node.add_edge(random_weight,random_node)
-                    self.nodes[random_node].add_edge(current_node.id,random_weight)
+                    self.nodes[random_node].add_edge(random_weight,current_node.id)
+                    print(current_node.id,random_node)
 
 
-    def show_di_graph(self,dist=None,path=[]):
+    def show_directed_graph(self,dist=None,path=[]):
         nxgraph = nx.MultiDiGraph(directed=True)
         plt.figure(figsize=(21, 10))  # Størrelse på grafens plot
         for node in self.nodes.values():
@@ -63,16 +64,18 @@ class Graph:
         nx.draw_networkx_labels(nxgraph, pos, font_size=12, font_weight="bold", font_color="black")
         # Bøjningsværdier til flere kanter
         rad_count = {}
+        edge_seen = set()
 
         # Gennemgå og tegn hver kant med label
-        for u, v, key, data in nxgraph.edges(keys=True, data=True):
+        for u, v, data in nxgraph.edges(data=True):
             edge = tuple(sorted((u, v))) # key in dic
             count = rad_count.get(edge, 0)
             if count%2 == 0: rad = 0.15*count
             else: rad = -0.15*count
             rad_count[edge] = count + 1
 
-            if (u,v,data['weight']) in path:
+            if ((u,v,data['weight']) in path) and (u,v,data['weight']) not in edge_seen:
+                edge_seen.add((u,v,data['weight']))
                 farve = 'red'
             else:
                 farve = 'gray'
@@ -89,30 +92,73 @@ class Graph:
             plt.text(label_x, label_y, str(weight), fontsize=12, color="blue", ha="center", va="center")
         
 
-        if dist: # create title
+        if dist != None: # create title
             plt.title(f"Graf med korteste sti : {dist}", fontsize=10)
         else:
             plt.title("plot over graf", fontsize=10)
         plt.show()
     
 
-    def show_undi_graph(self,dist=None,path=[]):
-        G = nx.Graph()
-        G.add_nodes_from(range(len(self.nodes)))
+    def show_undirected_graph(self,dist=None,path=[]):
+        nxgraph = nx.MultiGraph()
         for node in self.nodes.values():
             for verweight, nextnode in node.next:
-                G.add_edge(node.id,nextnode,weight=verweight)
-        pos = nx.circular_layout(G)  # Layout for grafen
-        plt.figure(figsize=(10, 8))  # Størrelse på grafens plot
-        nx.draw(G, pos, with_labels=True, node_color="lightblue", font_size=12, font_weight="bold")
-        nx.draw_networkx_edges(G, pos)
-        edge_labels = nx.get_edge_attributes(G, "weight")
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=12, font_color="red")
+                    nxgraph.add_edge(node.id,nextnode,weight=verweight)
 
-        if path:
-            edges_in_path = list(zip(path, path[1:]))  # Opret kanter fra stien
-            nx.draw_networkx_edges(G, pos, edgelist=edges_in_path, edge_color='r', width=2,connectionstyle="arc3,rad=0.3")
-        plt.title(f"Graf med korteste sti : {dist}", fontsize=10)
+        # Tilføj kanter — nogle har duplikater (modsatrettede) med samme vægt
+        # Her definerer du path som en liste af (u, v, vægt)
+
+        pos = nx.circular_layout(nxgraph)
+        plt.figure(figsize=(8,6))
+        nx.draw_networkx_nodes(nxgraph, pos, node_color="lightblue", node_size=700)
+        nx.draw_networkx_labels(nxgraph, pos, font_weight="bold")
+
+        edge_dic = {}  # Bruges til at filtrere duplikerede kanter
+        rad_counter = {}  # Til at styre bøjning
+        edge_seen = set()
+
+        for u, v, data in nxgraph.edges(data=True):
+            node_a = min(u, v)
+            node_b = max(u, v)
+
+            # Fjern duplikater: hvis vi allerede har tegnet denne vægt mellem disse to noder
+            if (node_a, node_b, data['weight']) in edge_dic and edge_dic[(node_a, node_b, data['weight'])] == 1:
+                edge_dic[(node_a, node_b, data['weight'])] = 0
+                continue
+
+            edge_dic[(node_a, node_b, data['weight'])] = 1  # Marker som set
+
+            # Beregn bøjning
+            count = rad_counter.get((node_a, node_b), 0)
+            rad = 0.15 * count if count % 2 == 0 else -0.15 * count
+            rad_counter[(node_a, node_b)] = count + 1
+
+            # Farve: hvis den er i path, rød ellers grå
+            if ((u, v, data['weight']) in path or (v, u, data['weight']) in path) and ((node_a,node_b) not in edge_seen):
+                edge_seen.add((node_a,node_b))
+                farve = 'red'
+            else:
+                farve = 'gray'
+
+            # Tegn kanten
+            nx.draw_networkx_edges(
+                nxgraph, pos, edgelist=[(u, v)],
+                connectionstyle=f"arc3,rad={rad}",
+                edge_color=farve, width=2
+            )
+
+            # Label placering for vægt
+            x1, y1 = pos[u]
+            x2, y2 = pos[v]
+            label_x = (x1 + x2) / 2 + (rad * 0.7) * (y2 - y1)
+            label_y = (y1 + y2) / 2 + (rad * 0.7) * (x1 - x2)
+
+            plt.text(label_x, label_y, str(data.get("weight", "")), fontsize=12, color="blue", ha="center", va="center")
+
+        if dist != None: # create title
+            plt.title(f"Graf med korteste sti : {dist}", fontsize=10)
+        else:
+            plt.title("plot over graf", fontsize=10)
         plt.show()
 
     
@@ -135,15 +181,9 @@ class Graph:
                 else:
                     visited_nodes[nextid] = 1
                     heappush(heapque,(distance+nextweight,nextid,pathlst + [(current_id,nextid,nextweight)]))
-        return None, None
+        return None, []
+    
 
-if __name__ == '__main__':
-    g1 = Graph()
-    g1.gen_directed_graph()
-
-    g1.show_di_graph()
-    dist,path = g1.dijkstra(0,3)
-    g1.show_di_graph(dist,path)
 
 
             
