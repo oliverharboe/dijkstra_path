@@ -168,19 +168,21 @@ class Graph:
         dijkstra algo
         '''
         heapque = [(0,start,[])]
-        visited_nodes = {start:1} # start id
+        visited_nodes = set() # start id
 
         while len(heapque) != 0:
             distance, current_id,pathlst = heappop(heapque)
             if current_id == end: # if reach end done
                 return distance,pathlst
             
+            if current_id in visited_nodes:
+                continue
+            
+            visited_nodes.add(current_id)
+            
             current_node = self.nodes[current_id]
             for nextweight,nextid in current_node.next:
-                if nextid in visited_nodes:
-                    continue
-                else:
-                    visited_nodes[nextid] = 1
+                if nextid not in visited_nodes:
                     heappush(heapque,(distance+nextweight,nextid,pathlst + [(current_id,nextid,nextweight)]))
         return None, []
     
