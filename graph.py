@@ -12,12 +12,13 @@ class Graph:
     def add_node(self,id,node):
         self.nodes[id]=node
         
-    def gen_directed_graph(self):
+    def gen_directed_graph(self,user_input):
         """
         generates random directed graph
         """
+        a,b = user_input
         #add nodes
-        node_amount = randint(5,6)
+        node_amount = randint(a,b)
         for idx in range(node_amount):
             newnode = Node(idx)
             self.add_node(idx,newnode)
@@ -31,12 +32,13 @@ class Graph:
                     random_weight = randint(3,10) # create random weight
                     current_node.add_edge(random_weight,random_node)
     
-    def gen_undirected_graph(self):
+    def gen_undirected_graph(self,user_input):
         """
         generates random undirected graph
         """
         #add nodes
-        node_amount = randint(5,6)
+        a,b = user_input
+        node_amount = randint(a,b)
         for idx in range(node_amount):
             newnode = Node(idx)
             self.add_node(idx,newnode)
@@ -54,20 +56,18 @@ class Graph:
 
     def show_directed_graph(self,dist=None,path=[]):
         nxgraph = nx.MultiDiGraph(directed=True)
-        plt.figure(figsize=(21, 10))  # Størrelse på grafens plot
+        plt.figure(figsize=(8,6))  # size of plot
         for node in self.nodes.values():
             for verweight, nextnode in node.next:
                 nxgraph.add_edge(node.id,nextnode,weight=verweight)
         pos = nx.spring_layout(nxgraph,seed=12)
         nx.draw_networkx_nodes(nxgraph,pos,node_color="lightblue",label=True)
         nx.draw_networkx_labels(nxgraph, pos, font_size=12, font_weight="bold", font_color="black")
-        # Bøjningsværdier til flere kanter
-        rad_count = {}
+        rad_count = {} #curve edges
         edge_seen = set()
 
-        # Gennemgå og tegn hver kant med label
         for u, v, data in nxgraph.edges(data=True):
-            edge = tuple(sorted((u, v))) # key in dic
+            edge = tuple(sorted((u, v))) 
             count = rad_count.get(edge, 0)
             if count%2 == 0: rad = 0.15*count
             else: rad = -0.15*count
@@ -80,13 +80,13 @@ class Graph:
                 farve = 'gray'
             nx.draw_networkx_edges(nxgraph, pos, edgelist=[(u, v)],edge_color=farve, width=2,connectionstyle=f"arc3,rad={rad}")
 
-            # Beregn label-position manuelt
+            #calculate label position
             x1, y1 = pos[u]
             x2, y2 = pos[v]
             label_x = (x1 + x2) / 2 + rad * 0.5 * (y2 - y1)
             label_y = (y1 + y2) / 2 + rad * 0.5 * (x1 - x2)
 
-            # Skriv vægten med plt.text
+            # plot weight
             weight = data.get("weight", "")
             plt.text(label_x, label_y, str(weight), fontsize=12, color="blue", ha="center", va="center")
         
@@ -104,49 +104,47 @@ class Graph:
             for verweight, nextnode in node.next:
                     nxgraph.add_edge(node.id,nextnode,weight=verweight)
 
-        # Tilføj kanter — nogle har duplikater (modsatrettede) med samme vægt
-        # Her definerer du path som en liste af (u, v, vægt)
 
         pos = nx.spring_layout(nxgraph,seed=12)
         plt.figure(figsize=(8,6))
         nx.draw_networkx_nodes(nxgraph, pos, node_color="lightblue", node_size=700)
         nx.draw_networkx_labels(nxgraph, pos, font_weight="bold")
 
-        edge_dic = {}  # Bruges til at filtrere duplikerede kanter
-        rad_counter = {}  # Til at styre bøjning
+        edge_dic = {}  # keep track of duplicates
+        rad_counter = {}  # used to calculate edge curve
         edge_seen = set()
 
         for u, v, data in nxgraph.edges(data=True):
             node_a = min(u, v)
             node_b = max(u, v)
 
-            # Fjern duplikater: hvis vi allerede har tegnet denne vægt mellem disse to noder
+            # removes half of the edges
             if (node_a, node_b, data['weight']) in edge_dic and edge_dic[(node_a, node_b, data['weight'])] == 1:
                 edge_dic[(node_a, node_b, data['weight'])] = 0
                 continue
 
-            edge_dic[(node_a, node_b, data['weight'])] = 1  # Marker som set
+            edge_dic[(node_a, node_b, data['weight'])] = 1  # marks as seen
 
-            # Beregn bøjning
+            # calculates edge curve
             count = rad_counter.get((node_a, node_b), 0)
             rad = 0.15 * count if count % 2 == 0 else -0.15 * count
             rad_counter[(node_a, node_b)] = count + 1
 
-            # Farve: hvis den er i path, rød ellers grå
+            # color: if edge is part of shortest path red else gray
             if ((u, v, data['weight']) in path or (v, u, data['weight']) in path) and ((node_a,node_b) not in edge_seen):
                 edge_seen.add((node_a,node_b))
                 farve = 'red'
             else:
                 farve = 'gray'
 
-            # Tegn kanten
+            # draw edge
             nx.draw_networkx_edges(
                 nxgraph, pos, edgelist=[(u, v)],
                 connectionstyle=f"arc3,rad={rad}",
                 edge_color=farve, width=2
             )
 
-            # Label placering for vægt
+            # cal label position
             x1, y1 = pos[u]
             x2, y2 = pos[v]
             label_x = (x1 + x2) / 2 + (rad * 0.7) * (y2 - y1)
@@ -163,25 +161,25 @@ class Graph:
     
     def dijkstra(self,start,end):
         '''
-        dijkstra algo
+        dijkstra algo for finding shortest path
         '''
-        heapque = [(0,start,[])]
-        visited_nodes = set() # start id
+        heapque = [(0,start,[])] # create heapque (distance,nodeid,path)
+        visited_nodes = set() 
 
         while len(heapque) != 0:
             distance, current_id,pathlst = heappop(heapque)
             if current_id == end: # if reach end done
                 return distance,pathlst
             
-            if current_id in visited_nodes:
+            if current_id in visited_nodes: # if already visited not shortest path
                 continue
             
             visited_nodes.add(current_id)
             
-            current_node = self.nodes[current_id]
+            current_node = self.nodes[current_id] #get node object from id
             for nextweight,nextid in current_node.next:
                 if nextid not in visited_nodes:
-                    heappush(heapque,(distance+nextweight,nextid,pathlst + [(current_id,nextid,nextweight)]))
+                    heappush(heapque,(distance+nextweight,nextid,pathlst + [(current_id,nextid,nextweight)])) # add new paths to heap
         return None, []
     
 
