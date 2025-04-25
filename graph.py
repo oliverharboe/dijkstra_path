@@ -30,7 +30,6 @@ class Graph:
                 if random_node != current_node.id:
                     random_weight = randint(3,10) # create random weight
                     current_node.add_edge(random_weight,random_node)
-                    print(current_node.id,random_node)
     
     def gen_undirected_graph(self):
         """
@@ -51,7 +50,6 @@ class Graph:
                     random_weight = randint(3,10) # create random weight
                     current_node.add_edge(random_weight,random_node)
                     self.nodes[random_node].add_edge(random_weight,current_node.id)
-                    print(current_node.id,random_node,random_weight)
 
 
     def show_directed_graph(self,dist=None,path=[]):
